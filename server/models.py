@@ -11,7 +11,22 @@ class Author(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, onupdate=db.func.now())
 
-    # Add validators 
+    # Add validators
+    @validates('name')
+    def validate_name(self, key, value):
+        author= db.session.query(Author.id).filter_by(name = value).first()
+        if not value:
+            raise ValueError('Name cannot be empty')
+        elif author is not None:
+            raise ValueError("Name must be unique")
+        return value
+    
+    @validates('phone_number')
+    def vaidate_phone_number(self, key, value):
+        if len(value) != 10 or not value.isdigit():
+            raise ValueError('Phone number must be 10 digits')
+        return value
+    
 
     def __repr__(self):
         return f'Author(id={self.id}, name={self.name})'
@@ -28,7 +43,32 @@ class Post(db.Model):
     updated_at = db.Column(db.DateTime, onupdate=db.func.now())
 
     # Add validators  
+    @validates('content')
+    def validate_post_content(self, key, value):
+        if len(value) < 250:
+            raise ValueError('Content must be at least 250 characters long')
+        return value
 
+    @validates('summary')
+    def validate_post_summary(self, key, value):
+        if len(value) > 250:
+            raise ValueError('Summary must be maximum of 250 characters long')
+        return value
+    
+    @validates('category')
+    def vaidate_post_category(self, key, value):
+        if value not in ['Fiction', 'Non-Fiction']:
+            raise ValueError('Category must be either Fiction or Non-Fiction.')
+        return value
+    
+    @validates('title')
+    def validate_title(self, key, value):
+        if not value:
+            raise ValueError("Title field should not be empty")
+        clickbait = ["Won't Believe", "Secret", "Guess", "Top"]
+        if not any(substring in value for substring in clickbait):
+            raise ValueError("No clickbait found")
+        return value
 
     def __repr__(self):
         return f'Post(id={self.id}, title={self.title} content={self.content}, summary={self.summary})'
